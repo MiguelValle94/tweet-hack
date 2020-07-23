@@ -1,6 +1,7 @@
 const passport = require("passport");
 const User = require("../models/user.model");
 const SlackStrategy = require("passport-slack").Strategy;
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
 const slack = new SlackStrategy(
   {
@@ -38,6 +39,60 @@ const slack = new SlackStrategy(
   }
 );
 
+
+const google = new GoogleStrategy(
+  {
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: "/auth/google/callback"
+  },
+  (accessToken, refreshToken, profile, next) => {
+    // to see the structure of the data in received response:
+    console.log("Google account details:", profile);
+
+    User.findOne({ email: profile.emails[0].value })
+      .then(user => {
+        console.log('Jp' + user);
+        if (user) {
+          next(null, user);
+          return;
+        } else {
+          // console.log(user);
+
+          const newUser = new User({
+            googleID: profile.id,
+            name: profile.displayName,
+            username: profile.emails[0].value.split("@")[0],
+            email: profile.emails[0].value,
+            avatar: profile._json.picture,
+            password:
+              profile.provider + Math.random().toString(36).substring(7),
+            social: {
+              gmail: profile.id,
+            },
+          });
+          newUser
+              .save()
+              .then((user) => {
+                next(null, user);
+              })
+              .catch((err) => next(err));
+        }
+        
+      })
+      .catch(err => done(err)); // closes User.findOne()
+  }
+);
+
+passport.serializeUser(function(user, next) {
+  next(null, user);
+});
+
+passport.deserializeUser(function(user, next) {
+  next(null, user);
+});
+
 passport.use(slack)
+passport.use(google)
 
 module.exports = passport.initialize()

@@ -7,7 +7,7 @@ module.exports.login = (req, res, next) => {
   res.render('users/login')
 }
 
-module.exports.doSocialLogin = (req, res, next) => {
+module.exports.doSocialLoginSlack = (req, res, next) => {
   const passportController = passport.authenticate("slack", (error, user) => {
     if (error) {
       next(error);
@@ -18,6 +18,29 @@ module.exports.doSocialLogin = (req, res, next) => {
   })
   
   passportController(req, res, next);
+}
+
+module.exports.doSocialLoginGmail = (req, res, next) => {
+  const passportDoSocialLoginGoogle = passport.authenticate("google", {
+    scope: [
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/userinfo.email"
+    ]
+  })
+  
+  passportDoSocialLoginGoogle(req, res, next)
+}
+
+module.exports.getSocialLoginGmail = (req, res, next) => {
+  const passportDoSocialLoginGoogle =  passport.authenticate('google', { scope:  ['profile', 'email']}, (error, user) => {
+    if (error) {
+      next(error);
+    } else {
+      req.session.userId = user._id;
+      res.redirect("/");
+    }
+  })
+  passportDoSocialLoginGoogle(req, res, next)
 }
 
 module.exports.doLogin = (req, res, next) => {

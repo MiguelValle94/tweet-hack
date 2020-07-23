@@ -57,7 +57,8 @@ const userSchema = new mongoose.Schema({
   },
   social: {
     slack: String
-  }
+  },
+  googleID: String,
 });
 
 userSchema.pre('save', function (next) {
